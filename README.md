@@ -109,4 +109,12 @@ GPUs
     - Dot product - multiply two elements and sum = O(1) + O(lg N) = O(lg N)
     - Hence Matmul is O(lg N)
 
+## Real-world CUDA
+
+- Deep Learning is not O(lg N) on a GPU, it's 20-30x improvement
+- O(1) is not O(1)
+    - `a[i] + b[i]` 
+    - `int c = 3 + 5`
+- Memory access latency is a big thing (even for CPU implementations). 
+- 
 
