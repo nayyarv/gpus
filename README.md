@@ -60,7 +60,8 @@ GPUs
 
 - Multiple cores with shared memory pool
 - Memory tends to be limited (max 12 GB today)
-- Full control of memory means code is easier to optimize
+- Full control of memory means code is easier to optimize (`__shared__`)
+- Very Specific
 
 ## What is CUDA?
 
@@ -107,3 +108,5 @@ GPUs
     - Each N^2 output element has N threads dedicated calculcating the dot product
     - Dot product - multiply two elements and sum = O(1) + O(lg N) = O(lg N)
     - Hence Matmul is O(lg N)
+
+

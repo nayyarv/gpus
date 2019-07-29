@@ -6,7 +6,7 @@ __global__ void dot_product(float *x, float *y, int len){
 
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-    x[index] += y[index];
+    s[index] = x[index] + y[index];
     __syncthreads();
 
 
