@@ -8,7 +8,7 @@ BENCHMARKS = ["nn", "matmul"]
 
 
 def func_body(fun):
-    """Code inspection magic"""
+    """Code inspection magic for use with timeit"""
     data = [l.strip() for l in inspect.getsource(fun).split("\n")[1:]]
     return "\n".join(data)
 
@@ -34,9 +34,6 @@ def main(bm, nvals, device, reps):
 
         rtime = timeit.timeit(runner, setup, number=reps)
         print(f"N: {N:<5}; rtime: {rtime/reps:.5f}")
-
-        
-
 
 
 

@@ -116,5 +116,14 @@ GPUs
     - `a[i] + b[i]` 
     - `int c = 3 + 5`
 - Memory access latency is a big thing (even for CPU implementations). 
-- 
+    - Commonly the biggest cause of a slowdown, GPUs are rarely compute bound.
+
+## Real-world CUDA
+
+- grids of threads of blocks
+- While we can have as many threads as we want, they don't execute simultaneously
+    - CUDA splits threads across blocks, and a batch of 32 threads (called a warp) 
+    are executed simultaneously
+    - GPUs have a Streaming multiprocessor which is assigned blocks and then runs the warps
+    - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
 
