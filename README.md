@@ -113,7 +113,7 @@ GPUs
 
 - Deep Learning is not O(lg N) on a GPU, it's 20-30x improvement
 - O(1) is not O(1)
-    - `a[i] + b[i]` 
+    - `a[i] += b[i]` 
     - `int c = 3 + 5`
 - Memory access latency is a big thing (even for CPU implementations). 
     - Commonly the biggest cause of a slowdown, GPUs are rarely compute bound.
@@ -127,3 +127,5 @@ GPUs
     - GPUs have a Streaming multiprocessor which is assigned blocks and then runs the warps
     - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
 
+
+## 
