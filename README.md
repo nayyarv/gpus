@@ -120,7 +120,7 @@ GPUs
 
 ## Real-world CUDA
 
-- grids of threads of blocks
+- grids of threads of blocks (insert image)
 - While we can have as many threads as we want, they don't execute simultaneously
     - CUDA splits threads across blocks, and a batch of 32 threads (called a warp) 
     are executed simultaneously
@@ -128,4 +128,53 @@ GPUs
     - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
 
 
-## 
+## Tree Refressher
+
+- Classification Trees is (are?) a greedy algorithm. 
+- Given the various parameters/predictors, we scan across them to find the optimal split. We take the optimal split and then run the same algorithm on the splits.
+- Two common extensions
+    - Boosting (XGBoost) - We build an ensemble of trees and we reweight observations with error to improve performance. This tends to result in shallow trees
+    - Random Forests - Build many trees on subsets of the data and predictors. Trees tend to be much deeper.
+
+## Trees in CUDA
+
+- Classification Trees
+    - Depth First - each CUDA thread/block takes ownership
+
+### Problems
+    
+- Performance is only a slight improvemnt for xgboost (3-10x) 
+- 
+
+
+## CUDA in non parallel
+
+- EM - GMM equations. 
+- No clear parallelisation. However, this is something that can benefit from the evaluation of above
+- 
+
+
+## Problems with GPUs
+
+1. RAM
+    - GPUs don't really have much more than 12 GB of RAM. System RAM can be huge, 128 GB
+    - Deep Learning, SGD and batching works well. Less so with other approaches
+2. Multi GPU
+    - Non trivial algorithms required - magnitude of difficulty increase
+    - It's significantly easier to run multiple single GPU experiments
+    - Performance scaling can be poor, even within a single machine
+3. Sequential Algorithms
+    - XGBoost benchmarks show only a 4x speedup
+    - MCMC doesn't benefit from CUDA cores
+    - EM iterations still need to be done in sequence
+4. Algorithm Changes
+    - Algorithms such as DBScan rely on special data structures (R* trees) which required completely new ways of implementing this algorithm
+
+
+5. Technical Debt
+    - Experi
+    - CUDA is not easy, sort of rare skill. 
+    - Require 
+6. No real ability to stream
+    - RL shows this - data is collected in a simulated environment, batched, sent to GPU to train neural nets
+    - Latency
