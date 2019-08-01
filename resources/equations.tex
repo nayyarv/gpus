@@ -1,0 +1,71 @@
+%% LyX 2.2.4 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{amsmath}
+\usepackage{babel}
+\usepackage[table]{xcolor}
+\begin{document}
+\begin{align*}
+\left(\begin{array}{c}
+a_{1}\\
+a_{2}\\
+\vdots\\
+a_{i}\\
+\vdots\\
+a_{n}
+\end{array}\right)+\left(\begin{array}{c}
+b_{1}\\
+b_{2}\\
+\vdots\\
+b_{i}\\
+\vdots\\
+b_{n}
+\end{array}\right)= & \left(\begin{array}{c}
+c_{1}\\
+c_{2}\\
+\vdots\\
+c_{i}\\
+\vdots\\
+c_{n}
+\end{array}\right)
+\end{align*}
+
+\begin{align*}
+\sum_{i=1}^{N}a_{i}= & ?
+\end{align*}
+
+\begin{center}
+\begin{align*}
+\left(\begin{array}{cccc}
+\rowcolor{yellow!30}
+a_{11} & a_{12} & \cdots & a_{1n}\\
+a_{21} & a_{22} \\
+\vdots &  & \ddots\\
+a_{n1} &  &  & a_{nn}
+\end{array}\right)\times\left(\begin{array}{>{\columncolor{blue!30}}c>{\columncolor{red!30}}ccc}
+b_{11} & b_{12} & \cdots & b_{1n}\\
+b_{21} & b_{22} \\
+\vdots &  & \ddots\\
+b_{n1} &  &  & b_{nn}
+\end{array}\right)
+\end{align*}
+\par\end{center}
+
+\begin{center}
+\begin{align*}
+=\left(\begin{array}{cccc}
+\colorbox{green!30}{$c_{11}$} & \colorbox{orange!30}{$c_{11}$} & \cdots & c_{1n}\\
+\colorbox{blue!10}{$c_{21}$} & c_{22} \\
+\vdots &  & \ddots\\
+c_{n1} &  &  & c_{nn}
+\end{array}\right)
+\end{align*}
+\par\end{center}
+
+
+  \begin{align*}
+  l(\mu,\Sigma,\mathbf{x})  = &\sum_{i=1}^{N}\ln\left(\sum_{k=1}^{K}\pi_{k}\mathcal{N}(x_{i}|\mu_{k},\Sigma_{k})\right)\label{eq:LogLikelihood}
+  \end{align*}
+\end{document}

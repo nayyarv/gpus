@@ -44,23 +44,6 @@ What unites
 - Very good at parallelisable tasks
 - Linear Algebra tends to be very parallelisable, hence ML gets the speed up. 
 
-
-## GPU vs CPU
-
-CPUs
-
-- High single threaded performance (5.0 GHz), minimal core capacity (8-16)
-- Large memory amounts - 128GB ++ 
-- Limited control of caches, so performance can be very variable
-- Aimed at being general purpose
-
-GPUs
-
-- Multiple cores with shared memory pool
-- Memory tends to be limited (max 12 GB today)
-- Full control of memory means code is easier to optimize (`__shared__`)
-- SIMD - Single Instruction, Multiple Data (locality)
-
 ## What is CUDA?
 
 - Stood for Compute Unified Device Architecture but no one cared so this was forgotten
@@ -120,6 +103,19 @@ GPUs
 
 # Reality
 
+
+## Real-world CUDA Threads
+
+- grids of threads of blocks (insert image)
+- While we can have as many threads as we want, they don't execute simultaneously
+    - CUDA splits threads across blocks, and a batch of 32 threads (called a warp) 
+    are executed simultaneously
+    - GPUs have a Streaming multiprocessor which is assigned blocks and then runs the warps
+    - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
+- Blocks are assigned to the SMs which run warps in an async-esque approach. When threads pause for data access, they are shuffled off till the data makes it across
+- NVIDIA provides spreadsheets on optimal block/thread combinations for your data
+
+
 ## Real-world CUDA Memory
 
 - Deep Learning is not O(lg N) on a GPU, it's 20-30x improvement
@@ -134,18 +130,6 @@ GPUs
     - Data should be accessed in region blocks for speed. 
     - Data from GPU RAM to SM (copy to SM cache if possible)
     - SM caches are 100x faster than GPU RAM, but can have memory bank conflicts
-
-## Real-world CUDA Threads
-
-- grids of threads of blocks (insert image)
-- While we can have as many threads as we want, they don't execute simultaneously
-    - CUDA splits threads across blocks, and a batch of 32 threads (called a warp) 
-    are executed simultaneously
-    - GPUs have a Streaming multiprocessor which is assigned blocks and then runs the warps
-    - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
-- Blocks are assigned to the SMs which run warps in an async-esque approach. When threads pause for data access, they are shuffled off till the data makes it across
-- NVIDIA provides spreadsheets on optimal block/thread combinations for your data
-
 
 ## Real World Matmul
 
@@ -256,6 +240,22 @@ Convolutions
     - Multi-GPU setups are best utilised doing individual contained experiments on each GPU instead of multiple GPU training.
     - Training on many GPUs should wait till your team has a mature tech stack and a decent engineering team (lot's of debugging re utilization)
     - Heat is a non trivial issue. Homemade GPU boxes never take this into account. 
+
+## GPU vs CPU
+
+CPUs
+
+- High single threaded performance (5.0 GHz), minimal core capacity (8-16)
+- Large memory amounts - 128GB ++ 
+- Limited control of caches, so performance can be very variable
+- Aimed at being general purpose
+
+GPUs
+
+- Multiple cores with shared memory pool
+- Memory tends to be limited (max 12 GB today)
+- Full control of memory means code is easier to optimize (`__shared__`)
+- SIMD - Single Instruction, Multiple Data (locality)
 
 # Asides
 
