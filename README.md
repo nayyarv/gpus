@@ -10,13 +10,8 @@ This talk gives us the why of why GPUs are so good at these operations, and what
 
 And finally, we look at some limitations - the limits of multi GPU training, the large latencies involved in CPU - GPU communications resulting in some sunk cost, heavily sequential algorithms getting small improvements (Boosting), or algorithms that depend on efficient data structures needing new methods to work on a GPU (DBScan)
 
-# Talk Skeleton
 
-
-## TOCs
-
-- This is a high level view of GPUs and CUDA from a math-y perspective
-- Any detailed questions re 
+Talk Skeleton
 
 # Intro 
 
@@ -69,7 +64,9 @@ GPUs
 ## What is CUDA?
 
 - Stood for Compute Unified Device Architecture but no one cared so this was forgotten
-- CUDA devices have Streaming Multiprocessors (SMs) and each has a number of CUDA cores. GTX970 has 13 SMs with 128 CUDA cores each.
+- CUDA devices have Streaming Multiprocessors (SMs) and each has a number of CUDA cores. 
+    - GTX970 has 13 SMs with 128 CUDA cores each.
+    - RTX 2080 Ti has 68 SMs with 64 CUDA cores each
 - In CUDA, you need plenty of independent threads to take advantage of the architecture and to minimize memory latency via async scheduling.
 - Not many guarantees of all threads running exactly in parallel, so code still needs to be thread safe.
 - number of threads is magnitudes greater than in standard multicore programming.
@@ -123,7 +120,7 @@ GPUs
 
 # Reality
 
-## Real-world CUDA
+## Real-world CUDA Memory
 
 - Deep Learning is not O(lg N) on a GPU, it's 20-30x improvement
 - O(1) is not O(1)
@@ -134,10 +131,11 @@ GPUs
     - Stuff like convolution layers are less memory bound 
 - Memory Latency
     - Copying Data from RAM to GPU memory - slow, but with high bandwidth
+    - Data should be accessed in region blocks for speed. 
     - Data from GPU RAM to SM (copy to SM cache if possible)
     - SM caches are 100x faster than GPU RAM, but can have memory bank conflicts
 
-## Real-world CUDA
+## Real-world CUDA Threads
 
 - grids of threads of blocks (insert image)
 - While we can have as many threads as we want, they don't execute simultaneously
@@ -145,7 +143,7 @@ GPUs
     are executed simultaneously
     - GPUs have a Streaming multiprocessor which is assigned blocks and then runs the warps
     - RTX 2080Ti's have 68 SMs and 64 CUDA cores per SM.
-- Blocks are assigned to the SMs
+- Blocks are assigned to the SMs which run warps in an async-esque approach. When threads pause for data access, they are shuffled off till the data makes it across
 - NVIDIA provides spreadsheets on optimal block/thread combinations for your data
 
 
@@ -173,21 +171,27 @@ Convolutions
 
 - Classification Trees is (are?) a greedy algorithm. 
 - Given the various parameters/predictors, we scan across them to find the optimal split. We take the optimal split and then run the same algorithm on the splits.
+- Recursive algorithm - once split has happened, the algorithm can be rerun on the split data.
 - Two common extensions
     - Boosting (XGBoost) - We build an ensemble of trees and we reweight observations with error to improve performance. This tends to result in shallow trees
-    - Random Forests - Build many trees on subsets of the data and predictors. Trees tend to be much deeper.
+    - Random Forests - Build many trees on subsets of the data and predictors. Trees tend to be much deeper in this setup. 
 
 ## Trees in CUDA
 
 - Classification Trees
     - Depth First - each CUDA SM/block takes ownership of a single parameter and use the warp to choose optimal split. This provides maximum speedup at early splits.
     - Breadth First - each CUDA SM/block is tasked with generating the full tree. This is more effective when the initial splits have already happened. 
+- Note that generating sorted arrays via indexing a permute array (i.e. `a[asort[i]]`) violates data locality and comes with a stiff memory penalty
+- Boosting
+    - Build one tree at a time with usually just 1 split. Depth first works best here, allows for observation reweighting
+- Bagging
+    - Build many trees simultaneously. Breadth First approaches work best with each SM building a tree. This can be combined with hybrid approaches, where the first few splits (with most data) are done depth first before going breadth first.
 
 ### Problems
     
 - Performance is only a slight improvemnt for xgboost (3-10x) 
-- Much greater for random forests (can construct multiple trees simultaneously)
-- Speedup is greatest when the features are few. 
+- Much greater for random forests (can construct multiple trees simultaneously). Benchmarks vary and it's been mostly mediocre (I'd like to see the rapids benchmark upon release) 
+- Speedup is greatest when the features are few
 
 
 ## CUDA where you wouldn't expect it
@@ -204,33 +208,34 @@ Convolutions
 1. RAM
     - GPUs don't really have much more than 12 GB of RAM. System RAM can be huge, 128 GB.
     - Deep Learning, SGD and batching works well. But maybe we want to increase batch size at later epochs?
-        - Large models can have 65 million parameters = 1 Gb with Float16 rep. This is not an insignificant part of GPU RAM.
+        - Large models can have 65 million parameters = 1 Gb with Float16 rep. This is not an insignificant part of GPU RAM (also overhead for adaptive gradient descents)
 2. Multi GPU
-    - Video gamers knew this years ago
+    - Video gamers knew this wasn't great years ago
     - Non trivial algorithms required - magnitude of difficulty increases
     - It's significantly easier to run multiple single GPU experiments
     - Performance scaling can be poor, even within a single machine. 
         - Convolutions scale well, others not so well (1 GPU may be fastest)
-    - Many ML algorithms have identifiability which means independent lock free depends on sparsity assumptions that may not hold. (HOGWILD!) 
+    - Many ML algorithms have identifiability which requires some restrictions and assumptions (HOGWILD for one)
 3. Sequential Algorithms
     - XGBoost benchmarks show only a 4x speedup
-    - MCMC doesn't benefit from CUDA cores
-    - EM iterations still need to be done in sequence
-    - Time series 
-    - RNNs training benefit is much reduced for this reason (Without NVIDIA provided code, these were slower than the CPU)
+    - MCMC/HMC doesn't benefit from CUDA cores
+    - EM iterations still need to be done in sequence (As does Gradient Descent! GPUs are only speeding up the objective function evaluation)
+    - Time series analysis tends to use error in previous prediction as a feature. Not very tensor-esque
+    - RNNs training benefit is much reduced for this reason (Without NVIDIA provided code, these were slower than the CPU). 6x for backprop, 140x for forward prop
 4. Algorithm Changes
     - Algorithms such as DBScan rely on special data structures (R* trees) which required completely new ways of implementing this algorithm
-    - XGBoost (trees in general) and KNN require fundamental algorithmic changes to work correctly
+    - XGBoost (trees in general) and KNN require fundamental algorithmic changes to work correctly.
+    - Spatial Convolutions are implemented very differently on a GPU than a CPU.
+    - Memory is expensive, compute is cheap on a GPU. CPU code tends to be the other way.
 
 5. Technical Debt
     - Compute power is not automatically available without the software. We're limited to what is available. Nvidia is good and proactive, but if you're off the beaten track, they're not very helpful
-    - CUDA is non trivial to program in. Most researchers will need a large engineering team to get anything out of their GPUs if they'
+    - CUDA is non trivial to program in. Most researchers will need a large engineering team to get anything out of their GPUs. 
     - Requires 
 
 6. No real ability to stream (i.e. small amounts continuously)
     - Latency on input - consider running a neural network forward on visual or auditory data as it comes in. GPUs are not good due to the high latency on CPU - GPU memory latency
-    - RL shows this - data is collected in a simulated environment, batched, sent to GPU to train neural nets. 
-        - eg DQN batches with replay
+    - Reinforcement Learning is a good example - data is collected in a simulated environment, batched, sent to GPU to train neural nets. 
 
 # Conclusions
 
@@ -238,12 +243,12 @@ Convolutions
 
 - Personal use
     - Your video game card
-    - Colab
+    - Previous gen card
 - Check what algorithms you're using before buying. There is more to ML than deep learning.
-    - You might still save in power
-    - You might still get a speedup despite not being obviously
+    - You might still save in power costs.
+    - You might still get a speedup despite not being obviously parallelisable
+    - it's easier than dealing with clusters
 - Device RAM is the commonly biggest limitation. It's cheaper to buy the one with the most RAM than it is to pay your ML Engineer/DS to fiddle with smaller GPUs
-
 - Buying your own hardware tends to pay itself of quickly vs cloud offerings. Though there can be a lot of overhead in managing hardware (especially at mid scale)
     - Much easier to do experiments on local hardware since it avoids data transfer issues.
     - Using GPUs to deliver inference is always going to be cloud based
@@ -251,3 +256,13 @@ Convolutions
     - Multi-GPU setups are best utilised doing individual contained experiments on each GPU instead of multiple GPU training.
     - Training on many GPUs should wait till your team has a mature tech stack and a decent engineering team (lot's of debugging re utilization)
     - Heat is a non trivial issue. Homemade GPU boxes never take this into account. 
+
+# Asides
+
+## Tensor Cores and TPUs
+
+- Use 8 bit integer arithmetic to perform calculations - much more efficient than floating point.
+- Software slowly coming out to use these cores
+- Mostly optimised for Tensor operations (i.e. matmul) found in neural nets.
+- Even more specific and less generalised than a GPU
+- Akin to a Bitcoin ASIC - very good at one thing
