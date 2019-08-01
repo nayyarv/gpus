@@ -55,7 +55,7 @@ What unites
 CPUs
 
 - High single threaded performance (5.0 GHz), minimal core capacity (8-16)
-- Large memory amounts2
+- Large memory amounts - 128GB ++ 
 - Limited control of caches, so performance can be very variable
 - Aimed at being general purpose
 
@@ -73,6 +73,15 @@ GPUs
 - In CUDA, you need plenty of independent threads to take advantage of the architecture and to minimize memory latency via async scheduling.
 - Not many guarantees of all threads running exactly in parallel, so code still needs to be thread safe.
 - number of threads is magnitudes greater than in standard multicore programming.
+
+## Syntax and terminology
+
+- CPU and System RAM = Host
+- GPU RAM = device/global
+- Code that runs (in parallel) on a GPU is called a kernel and defined with `__global__` keyword
+- Cache control - `__shared__`, shared across a block
+- `__syncthreads` is how we ensure synchronization. Some penalty, but less than you'd expect
+
 
 # Thinking with CUDA
 
@@ -139,12 +148,6 @@ GPUs
 - Blocks are assigned to the SMs
 - NVIDIA provides spreadsheets on optimal block/thread combinations for your data
 
-## Real world Convolutions
-
-- Assign calculation to a block/SM
-- Save the convolution parameters to SM cache.
-- Read chunk of matrix into SM cache too
-- Apply convolution with better O(1) - compute bound
 
 ## Real World Matmul
 
@@ -156,7 +159,12 @@ Tiled
 - Take submatrix tiles and multiply
 - We then sum up for our submatrix stride
 
-More optimsations till we get to cuBLAS
+cuBLAS
+- Very heavily optimised, memory latency is barely an issue
+
+Convolutions
+- Implemented as a Matmul, to take advantage of benefits
+- Efficiency comes from the tiling being done on local caches
 
 
 # CUDA in ML
@@ -198,6 +206,7 @@ More optimsations till we get to cuBLAS
     - Deep Learning, SGD and batching works well. But maybe we want to increase batch size at later epochs?
         - Large models can have 65 million parameters = 1 Gb with Float16 rep. This is not an insignificant part of GPU RAM.
 2. Multi GPU
+    - Video gamers knew this years ago
     - Non trivial algorithms required - magnitude of difficulty increases
     - It's significantly easier to run multiple single GPU experiments
     - Performance scaling can be poor, even within a single machine. 
@@ -214,10 +223,31 @@ More optimsations till we get to cuBLAS
     - XGBoost (trees in general) and KNN require fundamental algorithmic changes to work correctly
 
 5. Technical Debt
-    - Compute power is not automatically available without the software. We're limited to what is available. Nvidia is good and proactive, but if you're off the beaten track, they're somewhat useless
-    - CUDA is non trivial to program in. Most researchers will need a large engineering
+    - Compute power is not automatically available without the software. We're limited to what is available. Nvidia is good and proactive, but if you're off the beaten track, they're not very helpful
+    - CUDA is non trivial to program in. Most researchers will need a large engineering team to get anything out of their GPUs if they'
     - Requires 
-6. No real ability to stream
+
+6. No real ability to stream (i.e. small amounts continuously)
     - Latency on input - consider running a neural network forward on visual or auditory data as it comes in. GPUs are not good due to the high latency on CPU - GPU memory latency
     - RL shows this - data is collected in a simulated environment, batched, sent to GPU to train neural nets. 
         - eg DQN batches with replay
+
+# Conclusions
+
+## My Best Practices with GPUs (Personal Opinion)
+
+- Personal use
+    - Your video game card
+    - Colab
+- Check what algorithms you're using before buying. There is more to ML than deep learning.
+    - You might still save in power
+    - You might still get a speedup despite not being obviously
+- Device RAM is the commonly biggest limitation. It's cheaper to buy the one with the most RAM than it is to pay your ML Engineer/DS to fiddle with smaller GPUs
+
+- Buying your own hardware tends to pay itself of quickly vs cloud offerings. Though there can be a lot of overhead in managing hardware (especially at mid scale)
+    - Much easier to do experiments on local hardware since it avoids data transfer issues.
+    - Using GPUs to deliver inference is always going to be cloud based
+- Multi GPU
+    - Multi-GPU setups are best utilised doing individual contained experiments on each GPU instead of multiple GPU training.
+    - Training on many GPUs should wait till your team has a mature tech stack and a decent engineering team (lot's of debugging re utilization)
+    - Heat is a non trivial issue. Homemade GPU boxes never take this into account. 

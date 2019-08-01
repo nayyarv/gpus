@@ -3,7 +3,7 @@
 
 __globa__ void sum(float *x, float *y, int n){
     int index = blockIdx.x * blockDim.x + threadIdx.x;
-    // assume that we have launched enough threads in this case
+    // assume that we have launched enough threads for this case
     // see grid-stride loops for better practice
     if (index < n) {
         y[index] = x[index] + y[index];
@@ -32,6 +32,7 @@ __global__ void dot_product(float *x, float *y, float *out, int n){
     __syncthreads();
 
     // CUDA provides functions for this, but let's manually write this out for fun
+    // Note: We'd eventually start unrolling the loop
     for (int s = blockDim.x/2; s > 0; s>>=1) {
         // Only works for powers of 2
         if (threadIdx.x < s) {
